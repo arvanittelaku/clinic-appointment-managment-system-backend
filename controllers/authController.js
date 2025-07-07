@@ -13,7 +13,7 @@ exports.register = async (req,res) => {
         if(existingUser) return res.status(400).json({message: 'Email already taken!'});
 
         //hash the password
-        const hashedPassword = await bcrypt(password,10);
+        const hashedPassword = await bcrypt.hash(password,10);
         //create user
         const newUser = await User.create({name,email,password:hashedPassword,role});
         res.status(201).json({message: 'User registered successfully', user: { id: newUser.id, email: newUser.email, role: newUser.role }})
