@@ -38,20 +38,25 @@ exports.getAppointments = async (req, res) => {
 // Get appointment by ID
 exports.getAppointmentById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const appointment = await Appointment.findByPk(req.params.id);
 
-    const appointment = await Appointment.findByPk(id, {
-      include: [
-        { model: User, as: 'doctor', attributes: ['id', 'name'] },
-        { model: User, as: 'patient', attributes: ['id', 'name'] },
-      ],
-    });
+    if(!appointment) return res.status(404).json({message: 'Appointment not found!'});
 
-    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    const {role, id:userId } = req.user;
 
-    res.status(200).json(appointment);
-  } catch (err) {
-    res.status(500).json({ message: 'Error retrieving appointment', error: err.message });
+    if(role === 'admin' || role === 'receptionist') {
+        return res.json(appointment);
+    }
+
+    if(
+        (role === 'doctor' && appointment.doctor_id !== userId) ||
+        (role === 'patient' && appointment.patient_id !== userId)
+    ) {
+        return res.status(403).json({message:'Forbidden'});
+    }
+    res.json(appointment);
+  }catch(err) {
+    next(err);
   }
 };
 
