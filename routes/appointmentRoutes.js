@@ -14,4 +14,5 @@ router.patch('/:id', appointmentController.updateAppointment);
 
 router.delete('/:id', appointmentController.deleteAppointment);
 
+router.get('/available-slots', appointmentController.getAvailableSlots);
 module.exports = router;

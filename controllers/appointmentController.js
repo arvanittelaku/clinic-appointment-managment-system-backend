@@ -1,5 +1,44 @@
 const { where } = require('sequelize');
 const { Appointment, User } = require('../models');
+const { Op } = require('sequelize');
+
+//available slots
+exports.getAvailableSlots = async (req,res) => {
+  const { doctorId, date } = req.query;
+
+  if(!doctorId || !date) {
+    return res.status(400).json({message: 'Doctor ID and date are required'});
+  }
+
+  try {
+    const allSlots = [
+      "09:00", "09:30", "10:00", "10:30",
+      "11:00", "11:30", "12:00", "12:30",
+      "13:00", "13:30", "14:00", "14:30",
+      "15:00", "15:30", "16:00", "16:30"
+    ];
+
+    const bookedAppointments = await Appointment.findAll({
+      where: {
+        doctor_id: doctorId,
+        date
+      },
+      attributes: ['time_slot']
+    });
+
+    const bookedSlots = bookedAppointments.map(appt => appt.time_slot);
+    const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+    res.json({ availableSlots });
+  }catch(err) {
+    res.status(500).json({message: 'Failed to fetch available slots!', error:err.message});
+  }
+};
+
+
+
+
+
+
 
 // Create appointment
 exports.createAppointment = async (req, res) => {
