@@ -6,7 +6,11 @@ module.exports = (sequelize, DataTypes) => {
     patient_id: DataTypes.UUID,
     date: DataTypes.DATE,
     time_slot: DataTypes.STRING,
-    status: DataTypes.STRING
+    status: {
+      type: DataTypes.ENUM('scheduled','rescheduled','cancelled'),
+      allowNull:false,
+      defaultValue: 'scheduled'
+    }
   }, {
     tableName: 'appointments',
     timestamps: true,

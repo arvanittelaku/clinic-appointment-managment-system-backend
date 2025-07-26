@@ -3,36 +3,42 @@ const { Appointment, User } = require('../models');
 const { Op } = require('sequelize');
 
 //available slots
-exports.getAvailableSlots = async (req,res) => {
-  const { doctorId, date } = req.query;
-
-  if(!doctorId || !date) {
-    return res.status(400).json({message: 'Doctor ID and date are required'});
-  }
-
+exports.getAvailableSlots = async (req, res) => {
   try {
+    const { doctorId, date } = req.query;
+
     const allSlots = [
-      "09:00", "09:30", "10:00", "10:30",
-      "11:00", "11:30", "12:00", "12:30",
-      "13:00", "13:30", "14:00", "14:30",
-      "15:00", "15:30", "16:00", "16:30"
+      '09:00', '09:30', '10:00', '10:30',
+      '11:00', '11:30', '12:00', '12:30',
+      '13:00', '13:30', '14:00', '14:30',
+      '15:00', '15:30', '16:00', '16:30'
     ];
 
-    const bookedAppointments = await Appointment.findAll({
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const appointments = await Appointment.findAll({
       where: {
         doctor_id: doctorId,
-        date
-      },
-      attributes: ['time_slot']
+        date: {
+          [Op.between]: [startOfDay, endOfDay]
+        }
+      }
     });
 
-    const bookedSlots = bookedAppointments.map(appt => appt.time_slot);
+    const bookedSlots = appointments.map(app => app.time_slot);
+
     const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
-    res.json({ availableSlots });
-  }catch(err) {
-    res.status(500).json({message: 'Failed to fetch available slots!', error:err.message});
+
+    res.status(200).json({ availableSlots });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching available slots', error: err.message });
   }
 };
+
 
 
 
@@ -101,29 +107,36 @@ exports.getAppointments = async (req, res) => {
 };
 
 // Get appointment by ID
-exports.getAppointmentById = async (req, res) => {
+exports.getAppointmentById = async (req, res, next) => {
   try {
+    console.log("Params ID:", req.params.id); // log for debugging
+
     const appointment = await Appointment.findByPk(req.params.id);
 
-    if(!appointment) return res.status(404).json({message: 'Appointment not found!'});
-
-    const {role, id:userId } = req.user;
-
-    if(role === 'admin' || role === 'receptionist') {
-        return res.json(appointment);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found!' });
     }
 
-    if(
-        (role === 'doctor' && appointment.doctor_id !== userId) ||
-        (role === 'patient' && appointment.patient_id !== userId)
+    const { role, id: userId } = req.user;
+
+    if (role === 'admin' || role === 'receptionist') {
+      return res.json(appointment);
+    }
+
+    if (
+      (role === 'doctor' && appointment.doctor_id !== userId) ||
+      (role === 'patient' && appointment.patient_id !== userId)
     ) {
-        return res.status(403).json({message:'Forbidden'});
+      return res.status(403).json({ message: 'Forbidden' });
     }
+
     res.json(appointment);
-  }catch(err) {
-    next(err);
+  } catch (err) {
+    console.error("Error in getAppointmentById:", err);
+    res.status(500).json({ message: 'Internal Server Error', error: err.message });
   }
 };
+
 
 exports.updateAppointment = async (req, res) => {
   try {
@@ -131,22 +144,34 @@ exports.updateAppointment = async (req, res) => {
     const { date, time_slot, status } = req.body;
     const { role, id: userId } = req.user;
 
+    const allowedStatuses = ['scheduled', 'rescheduled', 'cancelled'];
+
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
     const appointment = await Appointment.findByPk(id);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
 
     if (
-      role === 'doctor' && appointment.doctor_id !== userId ||
-      role === 'patient'
+      (role === 'doctor' && appointment.doctor_id !== userId) ||
+      (role === 'patient' && appointment.patient_id !== userId)
     ) {
       return res.status(403).json({ message: 'You are not authorized to update this appointment' });
     }
+    const updateFields = {};
+    if (date !== undefined) updateFields.date = date;
+    if (time_slot !== undefined) updateFields.time_slot = time_slot;
+    if (status !== undefined) updateFields.status = status;
 
-    await appointment.update({ date, time_slot, status });
+    await appointment.update(updateFields);
+
     res.status(200).json(appointment);
   } catch (err) {
     res.status(500).json({ message: 'Error updating appointment', error: err.message });
   }
 };
+
 
 
 // Delete appointment

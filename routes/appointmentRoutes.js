@@ -5,6 +5,8 @@ const { authenticate } = require('../middlewares/authMiddleware');
 
 router.use(authenticate);
 
+router.get('/available-slots', appointmentController.getAvailableSlots);
+
 router.post('/', appointmentController.createAppointment);
 
 router.get('/', appointmentController.getAppointments);
@@ -14,5 +16,5 @@ router.patch('/:id', appointmentController.updateAppointment);
 
 router.delete('/:id', appointmentController.deleteAppointment);
 
-router.get('/available-slots', appointmentController.getAvailableSlots);
+
 module.exports = router;
