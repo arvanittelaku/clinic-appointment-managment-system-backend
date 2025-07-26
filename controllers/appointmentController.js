@@ -1,3 +1,4 @@
+const { where } = require('sequelize');
 const { Appointment, User } = require('../models');
 
 // Create appointment
@@ -8,6 +9,19 @@ exports.createAppointment = async (req, res) => {
 
     if(req.user.role != 'patient') {
       return res.status(403).json({message: 'Only patients can make appointments!'});
+    }
+
+    //check for conflict
+    const conflict = await Appointment.findOne({
+      where: {
+        doctor_id,
+        date: new Date(date),
+        time_slot
+      }
+    });
+
+    if(conflict) {
+      return res.status(400).json({message: 'This time slot is already booked for the selected doctor!'});
     }
 
     const appointment = await Appointment.create({
