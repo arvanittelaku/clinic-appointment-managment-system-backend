@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     performedBy: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUID, 
       allowNull: false,
     },
   }, {
@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
 
   AppointmentLog.associate = (models) => {
     AppointmentLog.belongsTo(models.Appointment, { foreignKey: 'appointmentId' });
+    AppointmentLog.belongsTo(models.User, { foreignKey: 'performedBy' }); // ✅ Added
   };
 
   return AppointmentLog;
