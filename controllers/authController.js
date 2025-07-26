@@ -2,9 +2,15 @@ const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { where } = require('sequelize');
-
+const { validationResult } = require('express-validator')
 //register new user
 exports.register = async (req,res) => {
+
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return res.status(400).json({errors: errors.array()});
+    }
+
     try {
         const {name,email,password,role} = req.body;
 
@@ -24,6 +30,12 @@ exports.register = async (req,res) => {
 
 //login user
 exports.login = async (req,res) => {
+    
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return res.status(400).json({errors: errors.array()})
+    }
+
     try {
         const {email,password} = req.body;
         //check if user exists
