@@ -1,6 +1,8 @@
 const { where } = require('sequelize');
 const { Appointment, User, AppointmentLog } = require('../models');
 const { Op } = require('sequelize');
+const appointmentLogController = require('./appointmentLogController');
+
 
 //available slots
 exports.getAvailableSlots = async (req, res) => {
@@ -174,12 +176,11 @@ exports.updateAppointment = async (req, res) => {
 
     await appointment.update(updateFields);
 
-    // ✅ Log the action
     if (status) {
       await AppointmentLog.create({
         appointmentId: appointment.id,
         action: status,
-        performedBy: userId,
+        performedBy: userId.toString(),
       });
     }
 
