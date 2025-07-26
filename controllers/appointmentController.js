@@ -1,5 +1,5 @@
 const { where } = require('sequelize');
-const { Appointment, User } = require('../models');
+const { Appointment, User, AppointmentLog } = require('../models');
 const { Op } = require('sequelize');
 
 //available slots
@@ -144,8 +144,7 @@ exports.updateAppointment = async (req, res) => {
     const { date, time_slot, status } = req.body;
     const { role, id: userId } = req.user;
 
-    const allowedStatuses = ['scheduled', 'rescheduled', 'cancelled'];
-
+    const allowedStatuses = ['scheduled', 'rescheduled', 'cancelled', 'completed'];
     if (status && !allowedStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
@@ -159,6 +158,15 @@ exports.updateAppointment = async (req, res) => {
     ) {
       return res.status(403).json({ message: 'You are not authorized to update this appointment' });
     }
+
+    if (status === 'completed' && role !== 'doctor') {
+      return res.status(403).json({ message: 'Only doctors can complete an appointment' });
+    }
+
+    if ((status === 'rescheduled' || status === 'cancelled') && role !== 'patient') {
+      return res.status(403).json({ message: 'Only patients can reschedule or cancel appointments' });
+    }
+
     const updateFields = {};
     if (date !== undefined) updateFields.date = date;
     if (time_slot !== undefined) updateFields.time_slot = time_slot;
@@ -166,11 +174,22 @@ exports.updateAppointment = async (req, res) => {
 
     await appointment.update(updateFields);
 
+    // ✅ Log the action
+    if (status) {
+      await AppointmentLog.create({
+        appointmentId: appointment.id,
+        action: status,
+        performedBy: userId,
+      });
+    }
+
     res.status(200).json(appointment);
   } catch (err) {
     res.status(500).json({ message: 'Error updating appointment', error: err.message });
   }
 };
+
+
 
 
 
