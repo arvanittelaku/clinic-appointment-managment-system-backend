@@ -11,6 +11,7 @@ app.use('/api/auth',authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/logs', appointmentLogRoutes);
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 app.get('/', (req, res) => {
   res.send('Clinic API running...');

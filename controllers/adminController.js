@@ -22,16 +22,24 @@ exports.getUserById = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
-    const { name, email, role } = req.body;
     const user = await User.findByPk(req.params.id);
-    if (!user) return next(new NotFoundError('User not found'));
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const { name, email, role } = req.body;
+    if (role && !['doctor', 'patient', 'admin', 'receptionist'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
 
     await user.update({ name, email, role });
-    res.json(user);
+    const userData = user.toJSON();
+    delete userData.password;
+
+    res.json({ message: 'User updated successfully', user: userData });
   } catch (err) {
     next(err);
   }
 };
+
 
 exports.deleteUser = async (req, res, next) => {
   try {
