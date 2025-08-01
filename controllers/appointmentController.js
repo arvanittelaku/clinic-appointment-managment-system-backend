@@ -1,5 +1,4 @@
 const { where } = require('sequelize');
-const { Appointment, User, AppointmentLog } = require('../models');
 const { Op } = require('sequelize');
 const appointmentLogController = require('./appointmentLogController');
 
@@ -78,6 +77,11 @@ exports.createAppointment = async (req, res) => {
       time_slot,
       status: 'scheduled'
     });
+    await AppointmentLog.create({
+       appointmentId: appointment.id,
+       action: 'created',
+       performedBy: req.user.id.toString(),
+      });
 
     res.status(201).json(appointment);
   }catch(err) {
@@ -86,34 +90,52 @@ exports.createAppointment = async (req, res) => {
 };
 
 // Get all appointments
+const { Appointment, AppointmentLog } = require('../models');
+
 exports.getAppointments = async (req, res) => {
   try {
-    const { role, id:userId } = req.user;
+    const { id: userId, role } = req.user;
 
     let where = {};
-    if (role === 'doctor') where = { doctor_id: userId };
-    if (role === 'patient') where = { patient_id: userId };
+    if (role === 'doctor') {
+      where.doctor_id = userId;
+    } else if (role === 'patient') {
+      where.patient_id = userId;
+    }
 
     const appointments = await Appointment.findAll({
       where,
       include: [
-        {model: User, as: 'doctor', attributes: ['id','name']},
-        { model: User, as: 'patient', attributes: ['id', 'name'] },
+        {
+          model: AppointmentLog,
+          as: 'logs',
+          attributes: ['action', 'performedBy', 'createdAt'],
+        }
       ],
+      order: [['date', 'ASC']]
     });
 
     res.status(200).json(appointments);
-  }catch(err) {
-    res.status(500).json({message: 'Failed to fetch appointments', error: err.message});
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching appointments', error: err.message });
   }
 };
+
 
 // Get appointment by ID
 exports.getAppointmentById = async (req, res, next) => {
   try {
-    console.log("Params ID:", req.params.id); // log for debugging
+    console.log("Params ID:", req.params.id); 
 
-    const appointment = await Appointment.findByPk(req.params.id);
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+    {
+      model: AppointmentLog,
+      as: 'logs',
+      attributes: ['action', 'performedBy', 'createdAt'],
+    }
+  ],
+});
 
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found!' });
@@ -209,7 +231,11 @@ exports.deleteAppointment = async (req, res) => {
     ) {
       return res.status(403).json({ message: 'You are not allowed to delete this appointment' });
     }
-
+    await AppointmentLog.create({
+      appointmentId: appointment.id,
+      action: 'deleted',
+      performedBy: req.user.id.toString(),
+    });
     await appointment.destroy();
     res.status(204).send();
   } catch (err) {

@@ -1,4 +1,5 @@
 'use strict';
+
 module.exports = (sequelize, DataTypes) => {
   const AppointmentLog = sequelize.define('AppointmentLog', {
     appointmentId: {
@@ -10,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     performedBy: {
-      type: DataTypes.UUID, 
+      type: DataTypes.UUID,
       allowNull: false,
     },
   }, {
@@ -20,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
 
   AppointmentLog.associate = (models) => {
     AppointmentLog.belongsTo(models.Appointment, { foreignKey: 'appointmentId' });
-    AppointmentLog.belongsTo(models.User, { foreignKey: 'performedBy' }); // ✅ Added
+    AppointmentLog.belongsTo(models.User, { foreignKey: 'performedBy' });
   };
 
   return AppointmentLog;

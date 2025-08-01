@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     time_slot: DataTypes.STRING,
     status: {
       type: DataTypes.ENUM('scheduled','rescheduled','cancelled'),
-      allowNull:false,
+      allowNull: false,
       defaultValue: 'scheduled'
     }
   }, {
@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
   Appointment.associate = (models) => {
     Appointment.belongsTo(models.User, { foreignKey: 'doctor_id', as: 'doctor' });
     Appointment.belongsTo(models.User, { foreignKey: 'patient_id', as: 'patient' });
+    Appointment.hasMany(models.AppointmentLog, {
+      foreignKey: 'appointmentId',
+      as: 'logs',
+    });
   };
 
   return Appointment;

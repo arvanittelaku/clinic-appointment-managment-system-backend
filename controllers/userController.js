@@ -9,3 +9,7 @@ exports.getAllDoctors = async (req,res) => {
         res.status(500).json({ message: 'Failed to fetch doctors', error: err.message });
     }
 };
+
+exports.getCurrentUser = async (req,res) => {
+    res.json(req.user);
+};
