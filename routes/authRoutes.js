@@ -11,7 +11,7 @@ const registerValidations = [
     body('email').isEmail().withMessage('Invalid email address!')
     .normalizeEmail(),
     body('password').isLength({min:6}).withMessage('Password must me atleast 6 characters long.'),
-    body('role').isIn(['doctor','patient']).withMessage('Role must be either patient or doctor.')
+    body('role').isIn(['doctor','patient',]).withMessage('Role must be either patient or doctor.')
 ];
 
 //login validations

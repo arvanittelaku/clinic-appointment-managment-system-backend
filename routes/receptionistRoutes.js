@@ -10,7 +10,7 @@ router.use(allowRoles('receptionist'));
 router.get('/appointments', receptionistController.getAllAppointments);
 router.get('/patients', receptionistController.getAllPatients);
 router.post('/appointments', receptionistController.createAppointment);
-router.put('/appointments/:id', receptionistController.updateAppointment);
+router.patch('/appointments/:id', receptionistController.updateAppointment);
 router.delete('/appointments/:id', receptionistController.deleteAppointment);
 router.get('/appointments/search', receptionistController.searchAppointments);
 
